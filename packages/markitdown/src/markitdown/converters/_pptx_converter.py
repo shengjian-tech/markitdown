@@ -13,6 +13,7 @@ from ._llm_caption import llm_caption
 from .._base_converter import DocumentConverter, DocumentConverterResult
 from .._stream_info import StreamInfo
 from .._exceptions import MissingDependencyException, MISSING_DEPENDENCY_MESSAGE
+from .CustomMammothCoverImage import *
 
 # Try loading optional (but in this case, required) dependencies
 # Save reporting of any exceptions for later
@@ -64,6 +65,12 @@ class PptxConverter(DocumentConverter):
         stream_info: StreamInfo,
         **kwargs: Any,  # Options to pass to the converter
     ) -> DocumentConverterResult:
+        # 构建模型
+        llm_client = kwargs.get("llm_client", None)
+        llm_model = kwargs.get("llm_model", None)
+        llm_prompt = kwargs.get("llm_prompt", None)
+        customMammothCoverImage = CustomMammothCoverImage(llm_client, llm_model, llm_prompt, 'pptx')
+
         # Check the dependencies
         if _dependency_exc_info is not None:
             raise MissingDependencyException(
@@ -147,9 +154,18 @@ class PptxConverter(DocumentConverter):
                         b64_string = base64.b64encode(blob).decode("utf-8")
                         md_content += f"\n![{alt_text}](data:{content_type};base64,{b64_string})\n"
                     else:
+                        # 读取图片内容
+                        content = customMammothCoverImage.mammoth_convert_image(shape.image)
                         # A placeholder name
                         filename = re.sub(r"\W", "", shape.name) + ".jpg"
-                        md_content += "\n![" + alt_text + "](" + filename + ")\n"
+                        # md_content += "\n![" + alt_text + "](" + filename + ")\n"
+                        # 组装返回格式
+                        md_content += (
+                                "\n!["
+                                + content['alt']
+                                + "]("
+                                + ")\n"
+                        )
 
                 # Tables
                 if self._is_table(shape):

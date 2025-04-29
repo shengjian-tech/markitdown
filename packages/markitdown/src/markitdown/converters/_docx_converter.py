@@ -6,6 +6,7 @@ from ._html_converter import HtmlConverter
 from .._base_converter import DocumentConverter, DocumentConverterResult
 from .._stream_info import StreamInfo
 from .._exceptions import MissingDependencyException, MISSING_DEPENDENCY_MESSAGE
+from .CustomMammothCoverImage import *
 
 # Try loading optional (but in this case, required) dependencies
 # Save reporting of any exceptions for later
@@ -57,6 +58,12 @@ class DocxConverter(HtmlConverter):
         stream_info: StreamInfo,
         **kwargs: Any,  # Options to pass to the converter
     ) -> DocumentConverterResult:
+        # 构建模型
+        llm_client= kwargs.get("llm_client", None)
+        llm_model = kwargs.get("llm_model", None)
+        llm_prompt = kwargs.get("llm_prompt", None)
+        customMammothCoverImage = CustomMammothCoverImage(llm_client, llm_model, llm_prompt, 'docx')
+
         # Check: the dependencies
         if _dependency_exc_info is not None:
             raise MissingDependencyException(
@@ -73,5 +80,5 @@ class DocxConverter(HtmlConverter):
 
         style_map = kwargs.get("style_map", None)
         return self._html_converter.convert_string(
-            mammoth.convert_to_html(file_stream, style_map=style_map).value, **kwargs
+            mammoth.convert_to_html(file_stream, style_map=style_map, convert_image=customMammothCoverImage.custom_image_converter).value, **kwargs
         )
